@@ -28,6 +28,7 @@ merken = df['merk'].dropna().unique()
 # ---------- Tabs ----------
 tab1, tab2, tab3 = st.tabs(["Totaal per Land", "Totaal per Maand/Jaar", "Data Bewerken"])
 
+# Tab 1: Totaal per Land
 with tab1:
     st.subheader("🌍 Totaal Verkoop per Land")
     geselecteerde_merken = st.multiselect("Filter op Merk", merken, default=list(merken), key="merkfilter1")
@@ -40,6 +41,7 @@ with tab1:
         fig1 = px.bar(totaal_per_land, x='land', y='totaal_bedrag', title='Totale Verkoop per Land')
         st.plotly_chart(fig1, use_container_width=True)
 
+# Tab 2: Totaal per Maand en Jaar
 with tab2:
     st.subheader("📅 Totaal Verkoop per Maand en Jaar")
     geselecteerde_merken2 = st.multiselect("Filter op Merk", merken, default=list(merken), key="merkfilter2")
@@ -53,26 +55,31 @@ with tab2:
         fig2 = px.line(totaal_per_maand_jaar, x='jaar-maand', y='totaal_bedrag', title='Totale Verkoop per Maand/Jaar')
         st.plotly_chart(fig2, use_container_width=True)
 
+# Tab 3: Data Bewerken
 with tab3:
+    # Plaats de update-knop bovenaan
     st.subheader("🛠️ Data Bewerken")
-
-    kolommen_edit = ['merk', 'land', 'aankoopdatum', 'totaal_bedrag']
-    editable_df = df[kolommen_edit].copy()
-
-    gewijzigde_df = st.data_editor(editable_df, num_rows="dynamic", use_container_width=True, key="editor")
-
-    # Knop om updates op te slaan in session_state
+    
+    # Knop om de wijzigingen bij te werken
     if st.button("🔄 Update Data"):
+        gewijzigde_df = st.session_state["gewijzigde_data"]
         gewijzigde_df['aankoopdatum'] = pd.to_datetime(gewijzigde_df['aankoopdatum'], errors='coerce')
         gewijzigde_df['jaar'] = gewijzigde_df['aankoopdatum'].dt.year
         gewijzigde_df['maand'] = gewijzigde_df['aankoopdatum'].dt.month
         st.session_state["data"] = gewijzigde_df
         st.success("Data succesvol bijgewerkt!")
 
+    # Editable dataframe
+    kolommen_edit = ['merk', 'land', 'aankoopdatum', 'totaal_bedrag']
+    editable_df = df[kolommen_edit].copy()
+
+    # Gebruik session_state om gewijzigde data vast te houden
+    st.session_state["gewijzigde_data"] = st.data_editor(editable_df, num_rows="dynamic", use_container_width=True)
+
     # Download-knop als Excel-bestand
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        gewijzigde_df.to_excel(writer, index=False, sheet_name='SchoenenData')
+        editable_df.to_excel(writer, index=False, sheet_name='SchoenenData')
     st.download_button(
         label="📥 Download als Excel",
         data=output.getvalue(),
