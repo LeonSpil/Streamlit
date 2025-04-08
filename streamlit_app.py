@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from io import BytesIO
 
 st.set_page_config(page_title="Schoenen Analyse", layout="wide")
 st.title("👟 Exclusieve Schoenen Verkoop Analyse")
@@ -10,21 +11,17 @@ st.title("👟 Exclusieve Schoenen Verkoop Analyse")
 def load_data():
     url = "https://raw.githubusercontent.com/LeonSpil/Streamlit/refs/heads/main/exclusieve_schoenen_verkoop_met_locatie.csv"
     df = pd.read_csv(url)
-
-    # Zorg voor juiste types
     df['aankoopdatum'] = pd.to_datetime(df['aankoopdatum'], errors='coerce')
     df = df.dropna(subset=['aankoopdatum', 'merk', 'land', 'totaal_bedrag'])
     df['jaar'] = df['aankoopdatum'].dt.year
     df['maand'] = df['aankoopdatum'].dt.month
     return df
 
-df = load_data()
+# Data éénmalig laden
+if "data" not in st.session_state:
+    st.session_state["data"] = load_data()
 
-# Check vereiste kolommen
-vereiste_kolommen = ['merk', 'land', 'aankoopdatum', 'totaal_bedrag']
-if not all(kol in df.columns for kol in vereiste_kolommen):
-    st.error(f"CSV mist verplichte kolommen: {vereiste_kolommen}")
-    st.stop()
+df = st.session_state["data"]
 
 merken = df['merk'].dropna().unique()
 
@@ -58,14 +55,27 @@ with tab2:
 
 with tab3:
     st.subheader("🛠️ Data Bewerken")
+
     kolommen_edit = ['merk', 'land', 'aankoopdatum', 'totaal_bedrag']
     editable_df = df[kolommen_edit].copy()
 
-    gewijzigde_df = st.data_editor(editable_df, num_rows="dynamic", use_container_width=True)
+    gewijzigde_df = st.data_editor(editable_df, num_rows="dynamic", use_container_width=True, key="editor")
 
+    # Knop om updates op te slaan in session_state
+    if st.button("🔄 Update Data"):
+        gewijzigde_df['aankoopdatum'] = pd.to_datetime(gewijzigde_df['aankoopdatum'], errors='coerce')
+        gewijzigde_df['jaar'] = gewijzigde_df['aankoopdatum'].dt.year
+        gewijzigde_df['maand'] = gewijzigde_df['aankoopdatum'].dt.month
+        st.session_state["data"] = gewijzigde_df
+        st.success("Data succesvol bijgewerkt!")
+
+    # Download-knop als Excel-bestand
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        gewijzigde_df.to_excel(writer, index=False, sheet_name='SchoenenData')
     st.download_button(
-        label="💾 Download Bewerkte CSV",
-        data=gewijzigde_df.to_csv(index=False).encode('utf-8'),
-        file_name="bewerkte_schoenen_data.csv",
-        mime="text/csv"
+        label="📥 Download als Excel",
+        data=output.getvalue(),
+        file_name="bewerkte_schoenen_data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
