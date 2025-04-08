@@ -29,4 +29,6 @@ if not all(kol in df.columns for kol in vereiste_kolommen):
 merken = df['merk'].dropna().unique()
 
 # ---------- Tabs ----------
-tab1, tab2, tab3 = st.tabs(["Totaal per Land", "Totaal per Maand
+# ---------- Tabs ----------
+tab1, tab2, tab3 = st.tabs(["Totaal per Land", "Totaal per Maand/Jaar", "Data Bewerken"])
+
