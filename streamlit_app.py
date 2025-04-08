@@ -6,24 +6,27 @@ st.set_page_config(page_title="Schoenen Analyse", layout="wide")
 
 st.title("Exclusieve Schoenen Verkoop Analyse")
 
-# Laad de data
+# ---------- Data laden ----------
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/LeonSpil/Streamlit/refs/heads/main/exclusieve_schoenen_verkoop_met_locatie.csv"
-    df = pd.read_csv(url, parse_dates=['aankoopdatum'])
+    df = pd.read_csv(url)
+
+    # Aankoopdatum als datetime, met fouttolerantie
+    df['aankoopdatum'] = pd.to_datetime(df['aankoopdatum'], errors='coerce')
     df['jaar'] = df['aankoopdatum'].dt.year
     df['maand'] = df['aankoopdatum'].dt.month
     return df
 
-df_origineel = load_data()
-merken = df_origineel['merk'].unique()
+df = load_data()
 
-# Tabs
-tab1, tab2, tab3 = st.tabs(["Totaal per Land", "Totaal per Maand/Jaar", "Data Bewerken"])
+# Controleer verplichte kolommen
+vereiste_kolommen = ['merk', 'land', 'aankoopdatum', 'totaal_bedrag']
+if not all(kol in df.columns for kol in vereiste_kolommen):
+    st.error(f"CSV mist verplichte kolommen: {vereiste_kolommen}")
+    st.stop()
 
-with tab1:
-    st.subheader("Totaal Bedrag per Land")
-    geselecteerde_merken = st.multiselect("Filter op Merk", merken, default=merken, key="filter_tab1")
-    df_filtered = df_origineel[df_origineel['merk'].isin(geselecteerde_merken)]
-    
-    totaal_per_land = df_filtered.groupby('land_
+merken = df['merk'].dropna().unique()
+
+# ---------- Tabs ----------
+tab1, tab2, tab3 = st.tabs(["Totaal per Land", "Totaal per Maand
