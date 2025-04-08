@@ -8,7 +8,7 @@ st.title("Exclusieve Schoenen Verkoop Analyse")
 # Laad de CSV vanuit dezelfde directory (of GitHub indien nodig)
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/<jouw-gebruikersnaam>/<repo-naam>/main/exclusieve_schoenen_verkoop_met_locatie.csv"
+    url = "https://raw.githubusercontent.com/LeonSpil/Streamlit/refs/heads/main/exclusieve_schoenen_verkoop_met_locatie.csv"
     df = pd.read_csv(url, parse_dates=['aankoopdatum'])
     df['jaar'] = df['aankoopdatum'].dt.year
     df['maand'] = df['aankoopdatum'].dt.month
